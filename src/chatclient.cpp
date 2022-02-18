@@ -1,14 +1,14 @@
 #include "chatclient.h"
 
-ChatClient::ChatClient( QWidget *parent, QHostAddress _targetHost,
-                        quint16 _targetPort, quint16 _listeningPort )
+ChatClient::ChatClient( QWidget * parent, const QHostAddress & _targetHost,
+                        const quint16 _targetPort, const quint16 _listeningPort )
     : QWidget( parent ),
       targetHost( _targetHost ),
       targetPort( _targetPort ),
       listeningPort( _listeningPort )
 {
     socket = new QUdpSocket( this );
-    socket->bind( QHostAddress::LocalHost, listeningPort );
+    socket->bind( QHostAddress::Any, listeningPort );
     connect( socket, SIGNAL( readyRead() ), this, SLOT( onReadyRead() ) ); // MACRO UC_SAFE_CONNECT() :)
     initGui();
 }
@@ -25,25 +25,24 @@ void ChatClient::onReadyRead()
         datagram.resize( socket->pendingDatagramSize() );
         socket->readDatagram( datagram.data(), datagram.size(), &targetHost, &targetPort );
 
+        if ( QString( datagram.data() ).isEmpty() )
+            return;
+
         QTextCharFormat colorTool = messageBrowser->currentCharFormat();
         colorTool.setForeground( QBrush( Qt::red ) );
         messageBrowser->setCurrentCharFormat( colorTool );
 
-        messageBrowser->append( targetHost.toString() + ": " + datagram.data() );
+        messageBrowser->append( QHostAddress( targetHost.toIPv4Address() ).toString() + ": " + datagram.data() );
+
+        messageBrowser->verticalScrollBar()->setValue( messageBrowser->verticalScrollBar()->maximum() );
 
         colorTool.clearForeground();
         messageBrowser->setCurrentCharFormat( colorTool );
-
-//        qDebug() << "IP: " << targetHost << "; Port: " << targetPort << "Message received: " << datagram.data();
-//        qDebug() << targetPort;
-//        qDebug() << listeningPort;
     }
 }
 
 void ChatClient::initGui()
 {
-    qDebug() << "Init GUI";
-
     this->setMinimumSize(500, 500);
 
     targetHostTextBox           = new QLineEdit( targetHost.toString() );
@@ -68,6 +67,8 @@ void ChatClient::initGui()
     messageBrowser                  = new QTextEdit();
     QPushButton * sendButton        = new QPushButton("Отправить");
 
+    messageBrowser->setReadOnly( true );
+
     connect( sendButton, SIGNAL( clicked() ), this, SLOT( onClickedSendButton() ) ); // MACRO UC_SAFE_CONNECT() :)
 
     QVBoxLayout * mainLayout = new QVBoxLayout();
@@ -82,6 +83,9 @@ void ChatClient::initGui()
 
 void ChatClient::sendDatagram( const QString & message )
 {
+    if ( message.isEmpty() )
+        return;
+
     socket->writeDatagram( message.toUtf8(), targetHost, targetPort );
 
     QTextCharFormat colorTool = messageBrowser->currentCharFormat();
@@ -93,10 +97,13 @@ void ChatClient::sendDatagram( const QString & message )
     colorTool.clearForeground();
     messageBrowser->setCurrentCharFormat( colorTool );
 
+    messageBrowser->verticalScrollBar()->setValue( messageBrowser->verticalScrollBar()->maximum() );
+}
 
-//    qDebug() << "IP: " << targetHost << "; Port: " << targetPort << "Message sent: " << message;
-//    qDebug() << targetPort;
-//    qDebug() << listeningPort;
+void ChatClient::keyPressEvent( QKeyEvent * event )
+{
+    if ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return )
+        onClickedSendButton();
 }
 
 void ChatClient::onClickedApplyButton()
@@ -104,19 +111,15 @@ void ChatClient::onClickedApplyButton()
     targetHost      = QHostAddress( targetHostTextBox->text() );
     targetPort      = targetPortTextBox->text().toUInt();
     listeningPort   = listeningPortTextBox->text().toUInt();
-    qDebug() << targetPort;
-    qDebug() << listeningPort;
 
     socket->close();
 
-    socket->bind( QHostAddress::LocalHost, listeningPort );
-
-//    socket->abort();
-//    socket->bind( QHostAddress::LocalHost, listeningPort );
+    socket->bind( QHostAddress::Any, listeningPort );
 }
 
 void ChatClient::onClickedSendButton()
 {
     sendDatagram( messageTextBox->text() );
+    messageTextBox->clear();
 }
 

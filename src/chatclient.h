@@ -5,8 +5,10 @@
 #include <QHostAddress>
 #include <QLabel>
 #include <QLineEdit>
+#include <QtGui>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QScrollBar>
 #include <QWidget>
 #include <QUdpSocket>
 
@@ -22,8 +24,8 @@ public:
     //! \brief ChatClient Конструктор
     //! \param parent Родительский виджет
     //!
-    ChatClient( QWidget *parent = nullptr, QHostAddress _targetHost = QHostAddress( "127.0.0.1" ),
-               quint16 _targetPort = 229, quint16 _listeningPort = 228 );
+    ChatClient( QWidget * parent = nullptr, const QHostAddress & _targetHost = QHostAddress( "127.0.0.1" ),
+               const quint16 _targetPort = 229, const quint16 _listeningPort = 228 );
     //!
     //! \brief ~ChatClient Деструктор
     //!
@@ -45,6 +47,11 @@ private:
     //! \param message Текст сообщения
     //!
     void sendDatagram(const QString & message);
+    //!
+    //! \brief keyPressEvent Перехватывает нажатие на Enter
+    //! \param event Событие
+    //!
+    void keyPressEvent( QKeyEvent * event );
 
 private slots:
     //!
