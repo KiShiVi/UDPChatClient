@@ -2,7 +2,7 @@
  
 ## Превью
  
-![Chat](https://github.com/KiShiVi/Tic-Tac-Toe-Python/blob/main/media/gameExample.gif)
+![Chat](https://github.com/KiShiVi/UDPChatClient/blob/main/multimedia/chatClient.gif?raw=true)
 
 ## Описание
 
